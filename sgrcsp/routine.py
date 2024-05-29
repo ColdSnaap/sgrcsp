@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import ast
+import copy
 from collections import Counter
 from optimization import GlobalOptimize
 from readconfig import ReadConfig
@@ -316,18 +317,12 @@ class Routine:
             step_current, accept_list, count, best_energy, current_state, best_state = \
                 read_continue_config()
         
-        per_dict = {
-            "d_lat": 0.0,
-            "d_coor": 0.1,
-            "d_rot": 1.0
-        }
-        
-
         for step in range(self.loop_number):
             
             while True:
                 try:
-                    current_state = structure_type_converter(current_state, "pymatgen")
+                    current_state_ori = structure_type_converter(current_state, "pymatgen")
+                    current_state = copy.deepcopy(current_state_ori)
                     cal1 = CalculateEnergy(current_state)
                     cal = cal1.energy_calculate("VASP", True, self.sub_command)
                     current_state, relax_energy, relax_energy_atom = cal
@@ -336,12 +331,13 @@ class Routine:
                 except ReadSeedError:
                     print("Molecule not intact, trying to generate a new structure to relax")
                     sys.stdout.flush()
-                    current_state = apply_perturbation(current_state, 0.2, 1.0, 0.0)
+                    for i in range(10):
+                        current_state_ori = apply_perturbation(current_state_ori)
             
             self.log(step_current, current_state, relax_energy)     
 
             # small perturbation
-            current_state = apply_perturbation(current_state, 0.1, 1.0, 0.0)
+            current_state = apply_perturbation(current_state)
 
             optimizer = GlobalOptimize(current_state)
             output = optimizer.simulated_annealing(
@@ -351,8 +347,7 @@ class Routine:
                 best_energy,
                 best_state,
                 big_loop=step,
-                rate_scale=rate_scale,
-                perturb_dict = per_dict
+                rate_scale=rate_scale
             )
             step_current, temp_current, accept_list, current_state, count, best_energy, best_state, rate_scale = output
 
@@ -362,45 +357,3 @@ class Routine:
                 print(f"Reach max loop: {step}")
             else:
                 print(f"step:{step_current}, temp:{temp_current}")
-    
-
-    def routine4(self):
-        """
-        Routine3:
-        relax using VASP, SA using VASP.
-        """        
-        if not self.job_contine:
-            # clean Log file
-            result_dir = os.getcwd() + "/Result"
-            if os.path.isfile(result_dir+"/Log"):
-                os.remove(result_dir+"/Log")
-            if os.path.isfile(result_dir+"/BestStrucsList"):
-                os.remove(result_dir+"/BestStrucsList")
-            if os.path.isdir(result_dir+"/BestStrucs"):
-                shutil.rmtree(result_dir+"/BestStrucs")
-            
-            step_current = 0
-            accept_list = None
-            current_state = self.structure
-            count = None
-            best_energy = None
-            best_state = None
-        else:
-            step_current, accept_list, count, best_energy, current_state, best_state = \
-                read_continue_config()
-        
-        for step in range(self.loop_number):
-            # structure relax
-            current_state = structure_type_converter(current_state, "pymatgen")
-            cal1 = CalculateEnergy(current_state)
-            cal = cal1.energy_calculate("VASP", True, self.sub_command)
-            current_state, relax_energy, relax_energy_atom = cal
-            self.log(step_current, current_state, relax_energy)     
-
-            optimizer = GlobalOptimize(current_state)
-            output = optimizer.simulated_annealing(step_current, accept_list, count, best_energy, best_state, big_loop=step)
-            step_current, temp_current, accept_list, current_state, count, best_energy, best_state = output
-
-            continue_log(step_current, accept_list, current_state, count, best_energy, best_state)
-
-            print(f"step:{step_current}, temp:{temp_current}")

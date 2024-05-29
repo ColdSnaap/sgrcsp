@@ -1,6 +1,7 @@
 import os
 import copy
 import sys
+import random
 from itertools import combinations
 from pathlib import Path
 from readconfig import ReadConfig
@@ -8,6 +9,103 @@ from pyxtal import pyxtal
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Poscar
 from pymatgen.io.cif import CifParser
+
+
+class Perturbation:
+    
+    def __init__(self, structure):
+        self.struc_pyxtal = structure_type_converter(structure, "pyxtal")
+        config = ReadConfig()
+        self.min_dis_allow = config.min_dis()
+        print("Applying perturbation ...")
+        sys.stdout.flush()
+    
+
+    def constant(self, d_coor, d_rot, d_lat, trial_max=1000):
+        print("Constant perturbation")
+        print(f"lat, coor, rot: {d_lat}, {d_coor}, {d_rot}")
+        sys.stdout.flush()
+        min_dis_struc = 0.001
+        count = 0
+
+        while min_dis_struc < self.min_dis_allow:
+            count += 1
+            struc_trial = copy.deepcopy(self.struc_pyxtal)
+            struc_trial.apply_perturbation(d_lat, d_coor, d_rot)
+            
+            struc_py = structure_type_converter(struc_trial, "pymatgen")
+            min_dis_struc = distance_check(struc_py)
+
+            if count == trial_max:
+                print(f"Could not find good structure")
+                print(f"dis_allowed={self.min_dis_allow}, dis_found={min_dis_struc}, trial_max={trial_max}")
+                print(f"Appling smaller perturbations")
+                sys.stdout.flush()
+                d_lat *= 0.9
+                d_coor *= 0.9
+                d_rot *= 0.9
+                print(f"lat, coor, rot: {d_lat}, {d_coor}, {d_rot}")
+
+                count = 0
+        
+        print(f"Trail: {count}")
+        sys.stdout.flush()
+
+        return struc_trial
+    
+
+    def uniform(self, d_coor1, d_rot1, d_lat1, trial_max=1000):
+        print("Uniform perturbation")
+        print(f"lat, coor, rot: 0-{d_lat1}, 0-{d_coor1}, 0-{d_rot1}")
+        sys.stdout.flush()
+        min_dis_struc = 0.001
+        count = 0
+
+        while min_dis_struc < self.min_dis_allow:
+            count += 1
+            struc_trial = copy.deepcopy(self.struc_pyxtal)
+
+            d_lat = round(random.uniform(0, d_lat1), 3)
+            d_coor = round(random.uniform(0, d_coor1), 3)
+            d_rot = round(random.uniform(0, d_rot1), 3)
+            print(f"lat, coor, rot: {d_lat}, {d_coor}, {d_rot}")
+            sys.stdout.flush()
+
+            struc_trial.apply_perturbation(d_lat, d_coor, d_rot)
+            
+            struc_py = structure_type_converter(struc_trial, "pymatgen")
+            min_dis_struc = distance_check(struc_py)
+
+            if count == trial_max:
+                print(f"Could not find good structure after {trial_max} trail")
+                print(f"d_lat, d_coor, d_rot: {d_lat}, {d_coor}, {d_rot}")
+                sys.stdout.flush()
+
+                count = 0
+        
+        print(f"Trail: {count}")
+        sys.stdout.flush()
+
+        return struc_trial
+    
+
+    def normal(self):
+        pass
+
+
+def apply_perturbation(structure):
+    config = ReadConfig()
+    perturb_type = config.perturb()
+    d_coor = config.d_coordinate()
+    d_rot = config.d_rotation()
+    d_lat = config.d_lattice()
+    perturb = Perturbation(structure)
+    if perturb_type == "constant":
+        return perturb.constant(d_coor=d_coor, d_rot=d_rot, d_lat=d_lat)
+    elif perturb_type == "uniform":
+        return perturb.uniform(d_coor1=d_coor, d_rot1=d_rot, d_lat1=d_lat)
+    elif perturb_type == "normal":
+        pass
 
 
 def structure_type_converter(structure, target_type, molecule=True):
@@ -105,44 +203,6 @@ def distance_check(structure) -> float:
     return min_distance
 
 
-def apply_perturbation(structure, d_coor, d_rot, d_lat, trial_max=1000):
-
-    struc_pyxtal = structure_type_converter(structure, "pyxtal")
-    struc_trial = copy.deepcopy(struc_pyxtal)
-    config = ReadConfig()
-    min_dis_allow = config.min_dis()
-
-    min_dis_struc = 0.001
-
-    print("Applying perturbation")
-    print(f"d_lat, d_coor, d_rot: {d_lat}, {d_coor}, {d_rot}")
-    sys.stdout.flush()
-    count = 0
-    
-    while min_dis_struc < min_dis_allow:
-        count += 1
-        struc_trial.apply_perturbation(d_lat, d_coor, d_rot)
-        
-        struc_py = structure_type_converter(struc_trial, "pymatgen")
-        min_dis_struc = distance_check(struc_py)
-
-        if count == trial_max:
-            print(f"Could not find good structure (dis_allowed={min_dis_allow}, dis_found={min_dis_struc}, trial_max={trial_max})")
-            print(f"Appling smaller perturbations")
-            sys.stdout.flush()
-            d_lat *= 0.9
-            d_coor *= 0.9
-            d_rot *= 0.9
-            print(f"d_lat, d_coor, d_rot: {d_lat}, {d_coor}, {d_rot}")
-
-            count = 0
-    
-    print(f"Trail: {count}")
-    sys.stdout.flush()
-
-    return struc_trial
-
-
 def structure_generation(
     sg,
     mol_list,
@@ -166,30 +226,3 @@ def structure_generation(
     
     print("Structure generated\n")
     return structure
-
-
-# def relaxed_structure_with_intact_molecule(
-#     structure,
-#     caltool,
-#     max_trial=10
-# ) -> pyxtal:
-#     """
-#     Check if the molecules are intact after structure relaxation.
-#     If not generate a new one structrue and relax it again until reach max_trial.
-    
-#     Args:
-#         structure: structure object
-#         (To see supported type please check structure_type_converter function)
-#         caltool: structure relaxation tool
-#         max_trial: Maximum attempts to generate structure with intact molecules
-    
-#     Return:
-#         pyxtal structure object
-#     """
-
-#     config = ReadConfig()
-#     sub_command = config.sub_command
-#     cal = CalculateEnergy(structure)
-#     relax_struc = cal.energy_calculate(caltool, True, sub_command)[0]
-#     structure = structure_type_converter(relax_struc, "pyxtal")
-#     pass

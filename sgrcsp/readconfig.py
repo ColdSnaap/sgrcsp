@@ -30,7 +30,8 @@ class ReadConfig:
         "StepMax": 80000,
         "VaspMlCompare": False,
         "InitialRelax": False,
-        "Continue": False
+        "Continue": False,
+        "Perturbation": "uniform"
         }
         # Try to open and read the file
         try:
@@ -199,3 +200,23 @@ class ReadConfig:
         relax = self.config["InitialRelax"]
         actual_boolean = relax == "True"
         return actual_boolean
+
+
+    def perturb(self):
+        perturb = self.config["Perturbation"]
+        return perturb
+    
+
+    def d_lattice(self):
+        d_lattice = self.config["Lattice"]
+        return float(d_lattice)
+    
+
+    def d_coordinate(self):
+        d_coordinate = self.config["Coordinate"]
+        return float(d_coordinate)
+    
+
+    def d_rotation(self):
+        d_rotation = self.config["Rotation"]
+        return float(d_rotation)

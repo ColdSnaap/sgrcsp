@@ -45,87 +45,6 @@ class GlobalOptimize:
         return result
 
 
-    def sampling_scale(
-        self,
-        temp,
-        structure: pyxtal,
-        random_sampling = 'normal',
-        d_lat: bool = False
-    ) -> dict:
-        """
-        scale = {
-            d_lat:
-            d_coor_mol_1:
-            d_coor_mol_2:
-            d_rot_mol_1:
-            d_rot_mol_2:
-            # atom crystal 
-            d_rot_atom_1:
-            d_rot_atom_2
-        }
-        """
-        print("getting sampling scale dict\n")
-        caltool = self.config.cal_tool()
-        sub_command = self.config.sub_command()
-        scale = {}
-        d_coor = self.random_sampling(temp, function=random_sampling)
-        d_rot= self.random_sampling(temp, function=random_sampling)
-        if d_lat:
-            d_lat = self.random_sampling(temp, function=random_sampling)
-        energy_coor = []
-        energy_rot = []
-        # scale_list = [d_coor, d_rot, d_lat]
-        scale_list = []
-        print("sampling d_coor")
-        for coor in d_coor:
-            coor = abs(float(coor))
-            # structure.apply_perturbation(d_lat = 0.0, d_coor = coor, d_rot = 0.0)
-            structure = apply_perturbation(structure, d_coor=coor, d_rot=0.0, d_lat=0.0)
-            cal = CalculateEnergy(structure)
-            test_energy = cal.energy_calculate(caltool, False, sub_command)[1]
-            energy_coor.append(test_energy)
-        average = np.mean(energy_coor)
-        scale_list.append(average)
-        print(f"scale_list:{scale_list}\n")
-        print("sampling d_rot")
-        for rot in d_rot:
-            rot = abs(float(rot))
-            # structure.apply_perturbation(d_lat = 0.0, d_coor = 0.0, d_rot = rot)
-            structure = apply_perturbation(structure, d_coor=0.0, d_rot=rot, d_lat=0.0)
-            cal = CalculateEnergy(structure)
-            test_energy = cal.energy_calculate(caltool, False, sub_command)[1]
-            energy_rot.append(test_energy)
-        average = np.mean(energy_rot)
-        scale_list.append(average)
-        print(f"scale_list:{scale_list}\n")
-        if d_lat:
-            print("sampling d_lat")
-            d_lat = self.random_sampling(temp, function=random_sampling)
-            energy_lat = []
-            for lat in d_lat:
-                lat = abs(float(lat))
-                # structure.apply_perturbation(d_lat = lat, d_coor = 0.0, d_rot = 0.0)
-                structure = apply_perturbation(structure, d_coor=0.0, d_rot=0.0, d_lat=lat)
-                test_energy = self.energy_calculate(structure)
-                energy_lat.append(test_energy)
-            average = np.mean(energy_lat)
-            scale_list.append(average)
-        else:
-            scale['d_lat'] = 0.0
-        print(f"scale_list:{scale_list}")
-
-        list_sum = sum(scale_list)
-        for i, item in enumerate(scale_list):
-            if i == 0:
-                scale['d_coor'] = round(item / list_sum, 5)
-            elif i == 1:
-                scale['d_rot'] = round(item / list_sum, 5)
-            elif i == 2:
-                scale['d_lat'] = round(item / list_sum, 5)
-        print(f"final scale: {scale}")
-        return scale
-
-
     def accept_rate_scale(self, accept_list: list, scale=None) -> dict:
         ideal_rate = self.config.accept_rate()
         if scale is None:
@@ -147,7 +66,7 @@ class GlobalOptimize:
                     scale[key] *= 0.9
 
         return scale
-                
+    
 
     def simulated_annealing(
         self,
@@ -164,8 +83,7 @@ class GlobalOptimize:
         accept_list_len: int = 50,
         write_output: bool = True,
         trajectory: bool = False,
-        rate_scale: dict = None,
-        perturb_dict: dict = None
+        rate_scale: dict = None
     ):
         """
         !currently sampling scale has bit of issue and it's disabled.
@@ -230,33 +148,9 @@ class GlobalOptimize:
             step_current = step_initial + step
             print(f"Step: {step_current}, Temperautre: {temp_current}")
 
-            if perturb_dict is None:
-                # pertubation
-                d_coor = self.random_sampling(temp_current, function=random_sampling)
-                # d_rot = self.random_sampling(temp_current, function=random_sampling)
-                d_rot = 500.0
-                if d_lat:
-                    d_lat = self.random_sampling(temp_current, function=random_sampling)
-                else:
-                    d_lat = 0.0
-
-                # adjust d_lat d_coor d_rot based on accpet rate and temperature
-                rate_scale = self.accept_rate_scale(accept_list, scale=rate_scale)
-                print(f"Scale:{rate_scale['d_lat'], rate_scale['d_coor'], rate_scale['d_rot']}")
-                # print(f"rate scale: {rate_scale}")
-                d_coor *= rate_scale['d_coor']
-                d_rot *= rate_scale['d_rot']
-                d_lat *= rate_scale['d_lat']
-        
-            else:
-                d_coor = perturb_dict['d_coor']
-                d_rot = perturb_dict['d_rot']
-                d_lat = perturb_dict['d_lat']
-
             # Generate a neighboring state
             next_state = copy.deepcopy(current_state)
-            # next_state.apply_perturbation(d_lat, d_coor, d_rot)
-            next_state = apply_perturbation(next_state, d_coor, d_rot, d_lat)
+            next_state = apply_perturbation(next_state)
             # write trajectory
             if trajectory:
                 trajectory_path = os.getcwd()+"/Trajectory"

@@ -42,7 +42,10 @@ class WyckoffCombinations:
             if len(comb) != 0:
                 valid_number = 0
                 for i, wyckoff_list in enumerate(comb):
-                    mol_crystal = molecular_crystal(dim=3, group=sg, molecules=self.mol_list, numMols=mol_number, factor=200.0, sites=wyckoff_list)                   
+                    try:
+                        mol_crystal = molecular_crystal(dim=3, group=sg, molecules=self.mol_list, numMols=mol_number, factor=200.0, sites=wyckoff_list) 
+                    except IndexError:
+                        pass
                     if mol_crystal.valid:
                         result_list.append(wyckoff_list)
                         valid_number += 1

@@ -23,10 +23,10 @@ from caltool import CalculateEnergy
 import subprocess
 from structure import structure_type_converter
 from structure import distance_check
-from structure import apply_perturbation
 from combination import WyckoffCombinations
 from analysis import vasp_ml_compare
 from analysis import check_trajectory
+from structure import Perturbation
 
 config = ReadConfig()
 
@@ -34,10 +34,10 @@ sg = config.space_group()
 mol_list = config.mol_list()
 mol_number = config.mol_number()
 
-# x = WyckoffCombinations(mol_list)
+x = WyckoffCombinations(mol_list)
 
-# # for i in sg:
-# yy = x.mol_ratio_comb_list_sg([1, 6], 148, 3)
+for i in sg:
+    yy = x.mol_ratio_comb_list_sg([1, 3], i, 3)
 
 # per_dict = {
 #     "d_lat": 0.0,
@@ -46,6 +46,10 @@ mol_number = config.mol_number()
 # }
 # poscar = Poscar.from_file(os.getcwd()+'/POSCAR_current')
 # struc = poscar.structure
+
+# perturb = Perturbation(struc)
+# x = perturb.uniform(0.2, 2, 0.0)
+# print(x)
 # check_trajectory(struc, per_dict)
 
 
@@ -61,11 +65,12 @@ mol_number = config.mol_number()
 
 # x = pyxtal(molecular=True)
 # y = pyxtal(molecular=True)
-# x.from_random(3, 148, mol_list, [3, 18], sites=[['3b'], ['18f']], factor=2.0)
+# x.from_random(3, 89, mol_list, [3, 9], sites=[['1d', '1c', '1b'], ['8p', '1a']], factor=200.0)
 # x = molecular_crystal(3, sg, mol_list, [3, 9], sites=[['2i', '1a'], ['2i', '1h', '1g', '1f', '1e', '1d', '1c', '1b']], factor=200.0)
 # x = molecular_crystal(3, 148, mol_list, [3, 18], sites=[['3b'], ['18f']], factor=200.0)
 
-# mol_crystal = molecular_crystal(dim=3, group=147, molecules=mol_list, numMols=[1, 6], factor=200.0, sites=[['1a'], ['6g']])
+# mol_crystal = molecular_crystal(dim=3, group=89, molecules=mol_list, numMols=[3, 9], factor=200.0, sites=[['2e', '1a'], ['2g', '2g', '2f', '1d', '1c', '1b']])
+# print(mol_crystal.valid)
 
 # print(mol_crystal)
 # mol_crystal = molecular_crystal(dim=3, group=31, molecules=mol_list, numMols=[2, 12], factor=200.0, sites=[['2a'], ['4b', '4b', '4b']])
