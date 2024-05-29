@@ -19,14 +19,13 @@ sys.path.insert(0, os.path.abspath("../"))
 
 # -- Project information -----------------------------------------------------
 
-project = "PyXtal"
-copyright = "Since 2018, Qiang Zhu, Scott Fredericks, Kevin Parrish"
-author = "Qiang Zhu, Scott Fredericks, Kevin Parrish"
+project = "SGRCSP"
+author = "ColdSnaap"
 
 # The short X.Y version
-version = "0.6.8"
+version = "0.0.1"
 # The full version, including alpha/beta/rc tags
-release = "0.6.8"
+release = "0.0.1"
 
 # -- General configuration ---------------------------------------------------
 
@@ -107,7 +106,7 @@ html_theme_options = {
     'includehidden': True,
     'titles_only': False
 }
-html_logo = '../images/512px_type1.png'
+# html_logo = '../images/512px_type1.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -128,48 +127,48 @@ html_sidebars = {"**": ["localtoc.html", "relations.html", "searchbox.html"]}
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "PyXtaldoc"
+htmlhelp_basename = "sgrcspdoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
 
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-}
+# latex_elements = {
+#     # The paper size ('letterpaper' or 'a4paper').
+#     #
+#     # 'papersize': 'letterpaper',
+#     # The font size ('10pt', '11pt' or '12pt').
+#     #
+#     # 'pointsize': '10pt',
+#     # Additional stuff for the LaTeX preamble.
+#     #
+#     # 'preamble': '',
+#     # Latex figure (float) alignment
+#     #
+#     # 'figure_align': 'htbp',
+# }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (
-        master_doc,
-        "PyXtal.tex",
-        "PyXtal Documentation",
-        "Qiang Zhu, Scott Fredericks",
-        "manual",
-    ),
-]
+# latex_documents = [
+#     (
+#         master_doc,
+#         "PyXtal.tex",
+#         "PyXtal Documentation",
+#         "Qiang Zhu, Scott Fredericks",
+#         "manual",
+#     ),
+# ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-latex_logo = '../images/512px_type1.png'
+# latex_logo = '../images/512px_type1.png'
 
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "pyxtal", "PyXtal Documentation", [author], 1)]
+# man_pages = [(master_doc, "pyxtal", "PyXtal Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -177,17 +176,17 @@ man_pages = [(master_doc, "pyxtal", "PyXtal Documentation", [author], 1)]
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-    (
-        master_doc,
-        "PyXtal",
-        "PyXtal Documentation",
-        author,
-        "PyXtal",
-        "One line description of project.",
-        "Miscellaneous",
-    ),
-]
+# texinfo_documents = [
+#     (
+#         master_doc,
+#         "PyXtal",
+#         "PyXtal Documentation",
+#         author,
+#         "PyXtal",
+#         "One line description of project.",
+#         "Miscellaneous",
+#     ),
+# ]
 
 
 # -- Extension configuration -------------------------------------------------
