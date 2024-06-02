@@ -2,6 +2,8 @@ import os
 import copy
 import sys
 import random
+import numpy as np
+import shutil
 from itertools import combinations
 from pathlib import Path
 from readconfig import ReadConfig
@@ -9,6 +11,7 @@ from pyxtal import pyxtal
 from pymatgen.core import Structure
 from pymatgen.io.vasp import Poscar
 from pymatgen.io.cif import CifParser
+from pyxtal.msg import ReadSeedError
 
 
 class Perturbation:
@@ -21,20 +24,33 @@ class Perturbation:
         sys.stdout.flush()
     
 
+    def intact_mol_check(self, structure):
+        struc_py = structure_type_converter(structure, "pymatgen")
+        try:
+            struc_pyxtal = structure_type_converter(struc_py, "pyxtal")
+            return True
+        except ReadSeedError:
+            return False
+
+
     def constant(self, d_coor, d_rot, d_lat, trial_max=1000):
         print("Constant perturbation")
-        print(f"lat, coor, rot: {d_lat}, {d_coor}, {d_rot}")
+        # print(f"lat, coor, rot: {d_lat}, {d_coor}, {d_rot}")
         sys.stdout.flush()
         min_dis_struc = 0.001
         count = 0
+        mol_intact = False
 
-        while min_dis_struc < self.min_dis_allow:
+        while min_dis_struc < self.min_dis_allow or mol_intact == False:
             count += 1
             struc_trial = copy.deepcopy(self.struc_pyxtal)
             struc_trial.apply_perturbation(d_lat, d_coor, d_rot)
             
+            # check minimum distance between atoms
             struc_py = structure_type_converter(struc_trial, "pymatgen")
-            min_dis_struc = distance_check(struc_py)
+            min_dis_struc = distance_min(struc_py)
+            # check if molecules are intact
+            mol_intact = self.intact_mol_check(struc_trial)
 
             if count == trial_max:
                 print(f"Could not find good structure")
@@ -56,32 +72,48 @@ class Perturbation:
 
     def uniform(self, d_coor1, d_rot1, d_lat1, trial_max=1000):
         print("Uniform perturbation")
-        print(f"lat, coor, rot: 0-{d_lat1}, 0-{d_coor1}, 0-{d_rot1}")
+        # print(f"lat, coor, rot: 0-{d_lat1}, 0-{d_coor1}, 0-{d_rot1}")
         sys.stdout.flush()
         min_dis_struc = 0.001
+        # min_dis_mol = 0.001
         count = 0
-
+        # count2 = 0
+        # mol_intact = False
         while min_dis_struc < self.min_dis_allow:
+        # while min_dis_struc < self.min_dis_allow or \
+        #     min_dis_mol < 2.0*self.min_dis_allow:
+            # mol_intact == False:
             count += 1
             struc_trial = copy.deepcopy(self.struc_pyxtal)
 
             d_lat = round(random.uniform(0, d_lat1), 3)
             d_coor = round(random.uniform(0, d_coor1), 3)
             d_rot = round(random.uniform(0, d_rot1), 3)
-            print(f"lat, coor, rot: {d_lat}, {d_coor}, {d_rot}")
-            sys.stdout.flush()
+            # print(f"lat, coor, rot: {d_lat}, {d_coor}, {d_rot}")
+            # sys.stdout.flush()
 
             struc_trial.apply_perturbation(d_lat, d_coor, d_rot)
             
+            # check minimum distance between atoms
             struc_py = structure_type_converter(struc_trial, "pymatgen")
-            min_dis_struc = distance_check(struc_py)
-
+            min_dis_struc = distance_min(struc_py)
+            # try:
+            # min_dis_mol = distance_min_mol(struc_trial)
+            # except ReadSeedError:
+            #     x_write = Poscar(struc_py)
+            #     x_write.write_file("POSCAR_error")
+            # check if molecules are intact
+            # mol_intact = self.intact_mol_check(struc_trial)
+            # print(f"min_dis_struc:{min_dis_struc}")
+            # print(f"min_dis_mol:{min_dis_mol}")
             if count == trial_max:
+                # count2 += 1
                 print(f"Could not find good structure after {trial_max} trail")
                 print(f"d_lat, d_coor, d_rot: {d_lat}, {d_coor}, {d_rot}")
                 sys.stdout.flush()
-
                 count = 0
+                # if count2 == 5:
+                #     raise ValueError("No good structure found after {count2} loop attemps")
         
         print(f"Trail: {count}")
         sys.stdout.flush()
@@ -143,7 +175,7 @@ def structure_type_converter(structure, target_type, molecule=True):
         if file_type == "cif":
             parser = CifParser(structure)
             structure = parser.get_structures()[0]
-        elif file_type == "POSCAR":
+        elif file_type == "POSCAR" or "CONTCAR":
             poscar = Poscar.from_file(structure)
             structure = poscar.structure
         
@@ -178,12 +210,12 @@ def structure_type_converter(structure, target_type, molecule=True):
                 raise TypeError(f"molecule={molecule} not support yet")
         elif isinstance(structure, pyxtal):
             return structure
-    
+
     else:
         raise NameError(f"Does not support target_type={target_type} yet")
 
 
-def distance_check(structure) -> float:
+def distance_min(structure) -> float:
     """
     Return the minimum distance between atoms in a structure.
     """
@@ -191,7 +223,6 @@ def distance_check(structure) -> float:
     structure = structure_type_converter(structure, "pymatgen")
 
     min_distance = float('inf')  # Initialize with infinity
-
     # Generate all unique pairs of sites
     for site1, site2 in combinations(structure.sites, 2):
         # Calculate distance between the pair of sites directly
@@ -203,6 +234,36 @@ def distance_check(structure) -> float:
     return min_distance
 
 
+def distance_min_mol(structure) -> bool:
+    
+    struc_pymatgen = structure_type_converter(structure, "pymatgen")
+    struc_pyxtal = structure_type_converter(structure, "pyxtal")
+
+    # get the elements in molecular -> list
+    rigid_elem_list = []
+    for i, site in enumerate(struc_pyxtal.mol_sites):
+        if len(site.get_coords_and_species()[0]) != 1:
+            rigid_elem_list += site.get_coords_and_species()[1]
+            centroid = np.mean(site.get_coords_and_species()[0], axis =0)
+            struc_pymatgen.append("H", centroid)
+    seen = set()
+    unique_elements = [x for x in rigid_elem_list if not (x in seen or seen.add(x))]
+
+    # structure with only single atoms and "H" as molecules
+    struc_pymatgen.remove_species(unique_elements)
+    # get the min distance between atom and molecules
+    # make sure atom is not "inside" molecules
+    min_distance = float('inf')
+    for site1, site2 in combinations(struc_pymatgen.sites, 2):
+        if "H" in [str(site1.specie), str(site2.specie)]:
+            # print(site1, site2)
+            distance = site1.distance(site2)
+            if distance < min_distance:
+                min_distance = distance
+    
+    return min_distance
+
+
 def structure_generation(
     sg,
     mol_list,
@@ -210,19 +271,26 @@ def structure_generation(
     sites,
     factor=1.0
 ) -> pyxtal:
-    print("Generating structure ...")
-    sys.stdout.flush()
-    while True:
-        try:
-            structure = pyxtal(molecular=True)
-            structure.from_random(3, sg, mol_list, mol_number, sites=sites, factor=factor)
-            break
-        except RuntimeError as e:
-            print(f"RuntimeError: {e}.")
-        finally:
-            factor += 0.05
-            print(f"Increasing volume, volume factor: {factor}")
-            sys.stdout.flush()
-    
-    print("Structure generated\n")
-    return structure
+    file_path = os.getcwd() + "/Input/initial.cif"
+    if os.path.isfile(file_path):
+        print("Initial structure found")
+        structure = structure_type_converter(file_path, "pyxtal")
+        return structure
+    else:
+        print("Generating structure ...")
+        sys.stdout.flush()
+        while True:
+            try:
+                structure = pyxtal(molecular=True)
+                structure.from_random(3, sg, mol_list, mol_number, sites=sites, factor=factor)
+                break
+            except RuntimeError as e:
+                print(f"RuntimeError: {e}.")
+            finally:
+                factor += 0.05
+                print(f"Increasing volume, volume factor: {factor}")
+                sys.stdout.flush()
+        
+        print("Structure generated\n")
+        return structure
+

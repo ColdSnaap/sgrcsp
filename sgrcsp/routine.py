@@ -99,11 +99,10 @@ def read_continue_config():
     config["count"] = int(config["count"])
     config["best_energy"] = float(config["best_energy"])
     config["accept_list"] = ast.literal_eval(config["accept_list"])
-    current_state = Poscar.from_file(continue_path+"/POSCAR_current")
+    # current_state = Poscar.from_file(continue_path+"/POSCAR_current")
     best_state = Poscar.from_file(continue_path+"/POSCAR_best")
     
-    return config["step_current"], config["accept_list"], config["count"], config["best_energy"], \
-        current_state, best_state
+    return config["step_current"], config["accept_list"], config["count"], config["best_energy"], best_state
 
 
 class Routine:
@@ -142,34 +141,52 @@ class Routine:
         print(f"MaxStep: {self.max_step}\n")
         sys.stdout.flush()
         # generate initial structure
-        if self.initial_relax:
-            while True:
-                try:
-                    self.structure = structure_generation(
+        file_path = os.getcwd() + "/Input/initial.cif"
+        if not self.job_contine:
+            if os.path.isfile(file_path):
+                self.structure = structure_generation(
                         self.sg,
                         self.mol_list,
                         self.mol_number,
                         self.sites,
                         factor=self.factor
                     )
-                    print("Relaxing the initial structure ...")
-                    sys.stdout.flush()
-                    cal = CalculateEnergy(self.structure)
-                    cal_struc = cal.energy_calculate("VASP", True, self.sub_command)[0]
-                    self.structure = structure_type_converter(cal_struc, "pyxtal")
-                    print("Initial structure generated")
-                    sys.stdout.flush()
-                    break
-                except ReadSeedError:
-                    print("Molecule not intact, trying to generate a new structure to relax")
-        else:
-            self.structure = structure_generation(
-                self.sg,
-                self.mol_list,
-                self.mol_number,
-                self.sites,
-                factor=self.factor
-            )                 
+            else:
+                while True:
+                    try:
+                        self.structure = structure_generation(
+                            self.sg,
+                            self.mol_list,
+                            self.mol_number,
+                            self.sites,
+                            factor=self.factor
+                        )
+                        print("Relaxing the initial structure ...")
+                        sys.stdout.flush()
+                        cal = CalculateEnergy(self.structure)
+                        cal_struc = cal.energy_calculate("VASP", True, self.sub_command)[0]
+                        self.structure = structure_type_converter(cal_struc, "pyxtal")
+                        print("Initial structure generated")
+                        sys.stdout.flush()
+                        break
+                    except ReadSeedError:
+                        print("Molecule not intact, trying to generate a new structure to relax")
+        
+        elif self.job_contine:
+            print("Continue ...")
+            file_path = os.getcwd() + "/StrucBackup/POSCAR"
+            self.structure = structure_type_converter(file_path, "pyxtal")
+            print("Backup structure read")
+            sys.stdout.flush()
+        
+        # write backup
+        backup_dir = os.getcwd() + "/StrucBackup"
+        if not os.path.isdir(backup_dir):
+            os.mkdir(backup_dir)
+        struc_py = structure_type_converter(self.structure, "pymatgen")
+        poscar = Poscar(struc_py)
+        poscar.write_file(f"{backup_dir}/POSCAR")
+
 
     def log(
         self,
@@ -188,6 +205,7 @@ class Routine:
         result_dir = os.getcwd() + "/Result"
         struc_log = os.getcwd() + "/Result/BestStrucsList"
         struc_file = os.getcwd() + "/Result/BestStrucs"
+        backup_dir = os.getcwd() + "/StrucBackup"
         
         sga = SpacegroupAnalyzer(structure, symprec=0.1)
         refined_structure = sga.get_refined_structure()
@@ -199,8 +217,14 @@ class Routine:
             # raise NameError("Result directory not exist")
         if not os.path.isdir(struc_file):
             os.makedirs(struc_file)
+        if not os.path.isdir(backup_dir):
+            os.mkdir(backup_dir)
 
         name_en = abs(energy)
+        # backup structure
+        poscar = Poscar(structure)
+        poscar.write_file(f"{backup_dir}/POSCAR")
+
         if not os.path.isfile(f"{struc_file}/{name_en}.cif"):
             # refined_structure.to(f'{struc_file}/{name_en}.cif', fmt="cif")
             cif_writer = CifWriter(refined_structure, symprec=0.1)
@@ -308,32 +332,44 @@ class Routine:
             
             step_current = 0
             accept_list = None
-            current_state = self.structure
             count = None
             best_energy = None
             best_state = None
             rate_scale = None
         else:
-            step_current, accept_list, count, best_energy, current_state, best_state = \
-                read_continue_config()
+            continue_path = os.getcwd() + "/Result/Continue"
+            if os.path.isdir(continue_path): 
+                step_current, accept_list, count, best_energy, best_state = read_continue_config()
+            else:
+                step_current = 0
+                accept_list = None
+                count = None
+                best_energy = None
+                best_state = None
+                rate_scale = None
         
+        current_state = self.structure
+
         for step in range(self.loop_number):
             
-            while True:
-                try:
-                    current_state_ori = structure_type_converter(current_state, "pymatgen")
-                    current_state = copy.deepcopy(current_state_ori)
-                    cal1 = CalculateEnergy(current_state)
-                    cal = cal1.energy_calculate("VASP", True, self.sub_command)
-                    current_state, relax_energy, relax_energy_atom = cal
-                    current_state = structure_type_converter(current_state, "pyxtal")
-                    break
-                except ReadSeedError:
-                    print("Molecule not intact, trying to generate a new structure to relax")
-                    sys.stdout.flush()
-                    for i in range(10):
-                        current_state_ori = apply_perturbation(current_state_ori)
-            
+            try:
+                current_state_ori = structure_type_converter(current_state, "pymatgen")
+                current_state = copy.deepcopy(current_state_ori)
+                cal1 = CalculateEnergy(current_state)
+                cal = cal1.energy_calculate("VASP", True, self.sub_command)
+                current_state, relax_energy, relax_energy_atom = cal
+                current_state = structure_type_converter(current_state, "pyxtal")
+            except ReadSeedError:
+                print("Molecule not intact, use backup structure")
+                sys.stdout.flush()
+                backup_file = os.getcwd()+"/StrucBackup/POSCAR"
+                current_state_ori = Structure.from_file(backup_file)
+                current_state = copy.deepcopy(current_state_ori)
+                cal1 = CalculateEnergy(current_state)
+                cal = cal1.energy_calculate("VASP", True, self.sub_command)
+                current_state, relax_energy, relax_energy_atom = cal
+                current_state = structure_type_converter(current_state, "pyxtal")
+                
             self.log(step_current, current_state, relax_energy)     
 
             # small perturbation

@@ -192,6 +192,7 @@ class GlobalOptimize:
                 print("-------------------------------------------------")
                 print(f"Current state: {current_energy} eV, {current_energy_atom} eV/atom")
                 print(f"New state: {next_energy} eV, {next_energy_atom} eV/atom")
+                sys.stdout.flush()
 
             # Determine if we should accept the new state
             accept = False

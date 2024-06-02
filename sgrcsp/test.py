@@ -22,11 +22,12 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from caltool import CalculateEnergy
 import subprocess
 from structure import structure_type_converter
-from structure import distance_check
+from structure import distance_min_mol
 from combination import WyckoffCombinations
 from analysis import vasp_ml_compare
 from analysis import check_trajectory
 from structure import Perturbation
+from pymatgen.io.cif import CifParser
 
 config = ReadConfig()
 
@@ -37,7 +38,7 @@ mol_number = config.mol_number()
 x = WyckoffCombinations(mol_list)
 
 for i in sg:
-    yy = x.mol_ratio_comb_list_sg([1, 3], i, 3)
+    yy = x.mol_ratio_comb_list_sg([1, 1, 1], i, 4)
 
 # per_dict = {
 #     "d_lat": 0.0,
@@ -80,8 +81,37 @@ for i in sg:
 
 # py = structure_type_converter(x, "pymatgen")
 
-# poscar = Poscar.from_file("/Users/qizhang/Desktop/paper_new/PSLi/BESTgatheredPOSCARS_order")
+# poscar = Poscar.from_file(os.getcwd()+"/99.77045.cif")
 # structure = poscar.structure
+
+# strcu_pyxtal = structure_type_converter(os.getcwd()+"/POSCAR", "pyxtal")
+# strcu_pyxtal = structure_type_converter(os.getcwd()+"/99.77045.cif", "pyxtal")
+# print(strcu_pyxtal)
+# x = distance_min_mol(strcu_pyxtal)
+
+
+# pertub = Perturbation(strcu_pyxtal)
+# strcu_pyxtal = pertub.uniform(d_coor1=0.2, d_rot1=2.0, d_lat1=0.0)
+# print(strcu_pyxtal.mol_sites[0].get_coords_and_species())
+# print("\n")
+# coor1 = strcu_pyxtal.mol_sites[2].get_coords_and_species()[0]
+# coor2 = strcu_pyxtal.mol_sites[3].get_coords_and_species()[0]
+# print(strcu_pyxtal.mol_sites[0].get_distances(coor1, coor2))
+# print(str(strcu_pyxtal.mol_sites[2]))
+
+# for i in range(200):
+#     print(i)
+#     pertub = Perturbation(strcu_pyxtal)
+#     strcu_pyxtal = pertub.uniform(d_coor1=0.2, d_rot1=2.0, d_lat1=0.0)
+#     print("\n")
+
+# x_py = structure_type_converter(strcu_pyxtal, "pymatgen")
+# x_write = Poscar(x_py)
+# x_write.write_file("POSCAR_result")
+
+
+
+# print(x)
 # cif = CifWriter(py, 0.1)
 # cif.write_file("test.cif")
 

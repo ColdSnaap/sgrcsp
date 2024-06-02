@@ -8,16 +8,16 @@ from version import __version__
 def print_logo():
     print(
         """
-            Package name is not decided yet
                   |\__/,|   (`
                 _.|o o  |_   ) )
                -(((---(((--------
+    Space Group Restricted Crystal Structure Prediction
         """
     )
-    print("-------------------(version", __version__, ")--------------------\n")
+    print("-------------------(version", __version__,")--------------------\n")
     print("A Python package for symmerty restricted crystal structure prediction")
-    print("The source code is available at ..")
-    print("Developed by ColdSnaaap \n\n")
+    print("The source code is available at https://github.com/ColdSnaap/sgrcsp.git")
+    print("Developed by ColdSnaap \n\n")
     sys.stdout.flush()
 
 
