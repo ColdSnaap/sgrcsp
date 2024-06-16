@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/805911060.svg)](https://zenodo.org/doi/10.5281/zenodo.11838813)
+
 <h1 align="center">Space Group Restricted Crystal Structure Prediction</h1>
 
 </h4>
