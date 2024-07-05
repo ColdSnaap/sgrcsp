@@ -1,0 +1,42 @@
+# generated using pymatgen
+data_Li3PS4
+_symmetry_space_group_name_H-M   P1
+_cell_length_a   5.76743355
+_cell_length_b   5.89604999
+_cell_length_c   9.82111395
+_cell_angle_alpha   77.21607527
+_cell_angle_beta   73.56638635
+_cell_angle_gamma   60.89537786
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   Li3PS4
+_chemical_formula_sum   'Li6 P2 S8'
+_cell_volume   278.47974695
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  1  0.05350553  0.52246522  0.94776610  1
+  Li  Li1  1  0.20628503  0.70027355  0.53525872  1
+  Li  Li2  1  0.29843569  0.81459901  0.21035016  1
+  Li  Li3  1  0.54720503  0.07467690  0.52553830  1
+  Li  Li4  1  0.67478816  0.18663579  0.14670727  1
+  Li  Li5  1  0.80081230  0.26029372  0.74034706  1
+  P  P6  1  0.37007671  0.88424086  0.84793913  1
+  P  P7  1  0.94338370  0.41753904  0.34080699  1
+  S  S8  1  0.09978692  0.16478800  0.50709669  1
+  S  S9  1  0.19748604  0.26021966  0.15845240  1
+  S  S10  1  0.38570780  0.23301765  0.77802967  1
+  S  S11  1  0.53100144  0.69495293  0.66884094  1
+  S  S12  1  0.57118021  0.44053637  0.35253040  1
+  S  S13  1  0.58606543  0.65418761  0.99910225  1
+  S  S14  1  0.89861562  0.78335392  0.34239091  1
+  S  S15  1  0.97902095  0.95294115  0.92624755  1

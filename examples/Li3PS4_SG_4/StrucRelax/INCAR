@@ -1,0 +1,33 @@
+#=============================================
+#identical check
+#=============================================
+
+#Star parameters for this run
+
+ISTART = 0
+ICHARG = 2
+#ISPIN = 2
+INIWAV = 1
+ISIF = 3
+#MAGMON = 28*1.0
+LREAL = AUTO
+ISMEAR = -5
+LWAVE = FALSE
+LCHARG = FALSE
+PREC = Accurate
+SYMPREC = 0.0005
+
+#Electronic Relaxation
+
+ENCUT = 420
+EDIFF = 0.00002
+ALGO = FAST
+
+#Ionic Relaxation
+
+EDIFFG = 0.0002
+IBRION = 2
+NSW = 300
+NPAR = 4
+NELM = 100
+

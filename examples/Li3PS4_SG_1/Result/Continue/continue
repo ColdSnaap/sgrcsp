@@ -1,0 +1,5 @@
+#Continue config
+step_current = 10000
+accept_list = [False, True, True, True, False, True, False, False, True, False, False, True, False, True, False, True, True, False, False, True, True, True, False, False, True, False, True, False, True, True, True, True, True, True, True, True, True, True, False, True, False, True, True, False, False, True, False, False, False, True]
+count = 0
+best_energy = -73.77092

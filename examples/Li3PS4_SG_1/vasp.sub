@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#SBATCH --job-name=newcode_test
+#SBATCH --out=Mill-%j.out
+#SBATCH --time=2-00:00:00
+#SBATCH --ntasks=64
+#SBATCH --nodes=1
+#SBATCH --partition=general
+
+ulimit -s unlimited
+module load vasp/5.4.4_gcc_9.5.0_mvapich_wannier
+python main.py
+
+

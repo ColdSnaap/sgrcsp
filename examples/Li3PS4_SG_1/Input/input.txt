@@ -1,0 +1,23 @@
+MolFiles = MOL_1.xyz MOL_2.xyz
+MolNumber = 2 6
+RatioMaxMultiplier = 2
+SpaceGroup = 1
+TempStep = fast
+Caltool = CHGnet
+TempInital = 2.0
+Volume = 0.75
+Optimization = routine3
+
+Perturbation = uniform
+Lattice = 0
+Coordinate = 0.1
+Rotation = 1.0
+
+InitialRelax = True
+SubCommand = mpirun vasp_std
+InternalLoop = 50
+StepMax = 10000
+
+Continue = False
+MolSites = [['1a', '1a'], ['1a', '1a', '1a', '1a', '1a', '1a']]
+Ready = True
