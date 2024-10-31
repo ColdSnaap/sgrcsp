@@ -2,7 +2,7 @@
 
 [Link to the publication](https://doi.org/10.48550/arXiv.2407.21337) 
 
-Sent to Journal of Physics: Condensed Matter and has passed peer review. The finalized version has been submitted.
+Provisionally accepted by Journal of Physics: Condensed Matter for final checks
 
 <h1 align="center">Space Group Restricted Crystal Structure Prediction</h1>
 
